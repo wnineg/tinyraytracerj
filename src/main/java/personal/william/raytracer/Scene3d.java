@@ -218,7 +218,7 @@ public class Scene3d implements Vector3dSpaceScene {
                     if (! optSurface.isPresent()) continue;
 
                     SurfacePoint objSurface = optSurface.get();
-                    double hitDist = objSurface.getPoint().norm();
+                    double hitDist = Math.abs(objSurface.getPoint().minus(orig).norm());
                     if (hitDist >= shortestDist) continue;
 
                     shortestDist = hitDist;
