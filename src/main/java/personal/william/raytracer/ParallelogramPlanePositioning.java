@@ -2,20 +2,17 @@ package personal.william.raytracer;
 
 import java.util.Objects;
 
-public class PlanePositioning implements Positionable.Positioning {
+public class ParallelogramPlanePositioning implements Positionable.Positioning {
 
     private final Vector3d origin;
 
     private final UnitVector3d directionX;
     private final UnitVector3d directionY;
 
-    public PlanePositioning(Vector3d origin, UnitVector3d directionX, UnitVector3d directionY) {
+    public ParallelogramPlanePositioning(Vector3d origin, UnitVector3d directionX, UnitVector3d directionY) {
         Objects.requireNonNull(origin, "origin cannot be null.");
         Objects.requireNonNull(directionX, "directionX cannot be null.");
         Objects.requireNonNull(directionY, "directionY cannot be null.");
-        if (directionX.dot(directionY) != 0) {
-            throw new IllegalArgumentException("directionX and directionY must be perpendicular to each other.");
-        }
 
         this.origin = origin;
         this.directionX = directionX;
@@ -24,7 +21,7 @@ public class PlanePositioning implements Positionable.Positioning {
 
     @Override
     public String toString() {
-        return "PlanePositioning{" +
+        return "ParallelogramPlanePositioning{" +
                 "origin=" + origin +
                 ", x=" + directionX +
                 ", y=" + directionY +

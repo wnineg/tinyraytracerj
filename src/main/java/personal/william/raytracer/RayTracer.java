@@ -27,15 +27,16 @@ public class RayTracer {
         Material solidOrange = new Material(0.4, 0.6, Color.ORANGE, 0, 80, 1, 0);
 
         Material[][] alternatingGrid = new Material[][]{{solidWhite, solidOrange}, {solidOrange, solidWhite}};
-        GridPatternPlane.Pattern pattern = new GridPatternPlane.Pattern(1, 1, alternatingGrid);
-        GridPatternPlane floor = new GridPatternPlane(10, 10, pattern);
+        GridPatternParallelogramPlane.Pattern pattern = new GridPatternParallelogramPlane.Pattern(1, 1, alternatingGrid);
+        GridPatternParallelogramPlane floor = new GridPatternParallelogramPlane(10, 10, pattern);
 
         Vector3dSpaceScene scene = new Scene3d();
 
         scene.setBackgroundColor(bgColor);
 
         Vector3d planeOrig = Vector3d.of(-5, -4, -20);
-        PlanePositioning planePos = new PlanePositioning(planeOrig, UnitVector3d.X, UnitVector3d.Z);
+        ParallelogramPlanePositioning planePos =
+                new ParallelogramPlanePositioning(planeOrig, UnitVector3d.X, UnitVector3d.Z);
 
         scene.putLight(new Light(1.5), Vector3d.of(-20, 20, 20));
         scene.putLight(new Light(1.8), Vector3d.of(30, 50, -25));

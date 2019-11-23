@@ -3,21 +3,21 @@ package personal.william.raytracer;
 import java.util.Objects;
 import java.util.Optional;
 
-public class GridPatternPlane implements SceneObject<PlanePositioning> {
+public class GridPatternParallelogramPlane implements SceneObject<ParallelogramPlanePositioning> {
 
     private final double width;
     private final double height;
 
     private final Pattern pattern;
 
-    public GridPatternPlane(double width, double height, Pattern pattern) {
+    public GridPatternParallelogramPlane(double width, double height, Pattern pattern) {
         this.width = width;
         this.height = height;
         this.pattern = pattern;
     }
 
     @Override
-    public Optional<SurfacePoint> cast(PlanePositioning positioning, Vector3d orig, UnitVector3d ray) {
+    public Optional<SurfacePoint> cast(ParallelogramPlanePositioning positioning, Vector3d orig, UnitVector3d ray) {
         Objects.requireNonNull(positioning, "positioning cannot be null.");
         Objects.requireNonNull(orig, "orig cannot be null.");
         Objects.requireNonNull(ray, "ray cannot be null.");
