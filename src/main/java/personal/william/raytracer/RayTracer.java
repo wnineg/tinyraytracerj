@@ -60,6 +60,9 @@ public class RayTracer {
         for (Light light : lights) {
             Float64Vector lightDir = light.getPosition().minus(hit.getPoint());
             lightDir = lightDir.times(lightDir.norm().inverse());
+
+            if (checkPointAtShadow(hit.getPoint(), hit.getNormal(), light.getPosition(), lightDir, objects)) continue;
+
             diffuseLightIntensity += light.getIntensity() * Math.max(0f, lightDir.times(hit.getNormal()).floatValue());
             specularLightIntensity +=
                     calculateSpecularIntensity(
@@ -125,6 +128,19 @@ public class RayTracer {
 
         // Ignore the rays which go too far away
         return shortestDist < 1000 ? Optional.of(new RayHit(hit, normal, material)) : Optional.empty();
+    }
+
+    private static boolean checkPointAtShadow(
+            Float64Vector point, Float64Vector normal, Float64Vector lightPos, Float64Vector lightDir,
+            Collection<VectorSpaceObject> objects) {
+        Float64 lightDist = lightPos.minus(point).norm();
+        Float64Vector shadowOrig = normal.times(lightDir).compareTo(0) < 0
+                ? point.minus(normal.times(1e-3)) : point.plus(normal.times(1e-3));
+        Optional<RayHit> OptHit = intersectScene(shadowOrig, lightDir, objects);
+        if (! OptHit.isPresent()) return false;
+
+        RayHit hit = OptHit.get();
+        return (hit.getPoint().minus(shadowOrig)).norm().compareTo(lightDist) < 0;
     }
 
     private static float calculateSpecularIntensity(
