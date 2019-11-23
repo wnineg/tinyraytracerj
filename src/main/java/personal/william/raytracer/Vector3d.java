@@ -84,6 +84,8 @@ public class Vector3d {
     }
 
     public Vector3d divide(double scalar) {
+        if (scalar == 0) throw new ArithmeticException("Divided by zero.");
+        if (scalar == 1) return this;
         return new Vector3d(x / scalar, y / scalar, z / scalar);
     }
 
@@ -119,7 +121,7 @@ public class Vector3d {
 
     private Vector3d calculateNormalized() {
         double norm = norm();
-        if (norm == 1) {
+        if (norm == 0 || norm == 1) {
             normalized = this;
             return normalized;
         }
