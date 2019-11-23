@@ -7,12 +7,17 @@ public class Material {
     private final double specularAlbedo;
     private final double diffuseAlbedo;
     private final Color diffuseColor;
+    private final double reflectionAlbedo;
     private final double specularExponent;
 
-    public Material(double specularAlbedo, double diffuseAlbedo, Color diffuseColor, double specularExponent) {
+    public Material(
+            double specularAlbedo,
+            double diffuseAlbedo, Color diffuseColor,
+            double reflectionAlbedo, double specularExponent) {
         this.specularAlbedo = specularAlbedo;
         this.diffuseAlbedo = diffuseAlbedo;
         this.diffuseColor = diffuseColor;
+        this.reflectionAlbedo = reflectionAlbedo;
         this.specularExponent = specularExponent;
     }
 
@@ -26,6 +31,10 @@ public class Material {
 
     public Color getDiffuseColor() {
         return diffuseColor;
+    }
+
+    public double getReflectionAlbedo() {
+        return reflectionAlbedo;
     }
 
     public double getSpecularExponent() {
