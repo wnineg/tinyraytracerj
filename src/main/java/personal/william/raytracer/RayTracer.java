@@ -7,6 +7,7 @@ import org.jscience.mathematics.vector.Vector;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.Optional;
 import java.util.OptionalDouble;
 
 public class RayTracer {
@@ -18,7 +19,8 @@ public class RayTracer {
         final Color[][] frameBuffer = new Color[width][height];
 
         Float64Vector light = Float64Vector.valueOf(0f, 0f, 0f);
-        Sphere sphere = new Sphere(Float64Vector.valueOf(-3f, 0f, -16f), 2);
+        Color bgColor = new Color(0.2f, 0.7f, 0.8f);
+        Sphere sphere = new Sphere(new Material(new Color(0.4f, 0.4f, 0.3f)), Float64Vector.valueOf(-3f, 0f, -16f), 2);
 
         for (int i = 0; i < width; ++i) {
             for (int j = 0; j < height; ++j) {
@@ -26,16 +28,16 @@ public class RayTracer {
                 float y = (float) -((2 * (j + 0.5) / (float) height - 1) * Math.tan(fov / 2.0));
                 Float64Vector dir = Float64Vector.valueOf(x, y, -1);
                 dir = dir.times(dir.norm().inverse());
-                frameBuffer[i][j] = castRay(light, dir, sphere);
+                frameBuffer[i][j] = castRay(light, dir, sphere).orElse(bgColor);
             }
         }
 
         displayImage(frameBuffer);
     }
 
-    private static Color castRay(Vector<Float64> orig, Vector<Float64> dir, Sphere sphere) {
-        OptionalDouble contactDist = sphere.getRayContactDistance(orig, dir);
-        return contactDist.isPresent() ? new Color(0.4f, 0.4f, 0.3f) : new Color(0.2f, 0.7f, 0.8f);
+    private static Optional<Color> castRay(Vector<Float64> orig, Vector<Float64> dir, VectorSpaceObject object) {
+        OptionalDouble contactDist = object.calculateRayContactDistance(orig, dir);
+        return contactDist.isPresent() ? Optional.of(object.getMaterial().getDiffuseColor()) : Optional.empty();
     }
 
     private static void displayImage(Color[][] rgbBuffer) {

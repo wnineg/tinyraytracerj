@@ -5,17 +5,25 @@ import org.jscience.mathematics.vector.Vector;
 
 import java.util.OptionalDouble;
 
-public class Sphere {
+public class Sphere implements VectorSpaceObject {
 
+    private final Material material;
     private final Vector<Float64> center;
     private final float radius;
 
-    public Sphere(Vector<Float64> center, float radius) {
+    public Sphere(Material material, Vector<Float64> center, float radius) {
+        this.material = material;
         this.center = center;
         this.radius = radius;
     }
 
-    public OptionalDouble getRayContactDistance(Vector<Float64> orig, Vector<Float64> dir) {
+    @Override
+    public Material getMaterial() {
+        return material;
+    }
+
+    @Override
+    public OptionalDouble calculateRayContactDistance(Vector<Float64> orig, Vector<Float64> dir) {
         Vector<Float64> ray = center.minus(orig);
         Float64 rayToCenterDist = dir.times(ray);
         Float64 centerDistSquare = ray.times(ray).minus(rayToCenterDist.times(rayToCenterDist));
