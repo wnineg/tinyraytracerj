@@ -25,6 +25,9 @@ public class RayTracer {
         Material ivory = new Material(new Color(0.4f, 0.4f, 0.3f));
         Material red = new Material(new Color(0.3f, 0.1f, 0.1f));
 
+        Collection<Light> lights = new ArrayList<>(1);
+        lights.add(new Light(Float64Vector.valueOf(-20f, 20f, 20f), 1.5f));
+
         Collection<VectorSpaceObject> objects = new ArrayList<>(4);
         objects.add(new Sphere(ivory, Float64Vector.valueOf(-3f, 0f, -16f), 2));
         objects.add(new Sphere(red, Float64Vector.valueOf(-1f, -1.5f, -12f), 2));
@@ -37,7 +40,7 @@ public class RayTracer {
                 float y = (float) -((2 * (j + 0.5) / (float) height - 1) * Math.tan(fov / 2.0));
                 Float64Vector dir = Float64Vector.valueOf(x, y, -1);
                 dir = dir.times(dir.norm().inverse());
-                frameBuffer[i][j] = castRay(light, dir, objects).orElse(bgColor);
+                frameBuffer[i][j] = castRay(light, dir, lights, objects).orElse(bgColor);
             }
         }
 
@@ -45,24 +48,39 @@ public class RayTracer {
     }
 
     private static Optional<Color> castRay(
-            Vector<Float64> orig, Vector<Float64> dir, Collection<VectorSpaceObject> objects) {
-        return intersectScene(orig, dir, objects).map(RayHit::getMaterial).map(Material::getDiffuseColor);
+            Vector<Float64> orig, Vector<Float64> dir,
+            Collection<Light> lights, Collection<VectorSpaceObject> objects) {
+        Optional<RayHit> optHit = intersectScene(orig, dir, objects);
+        if (! optHit.isPresent()) return Optional.empty();
+
+        RayHit hit = optHit.get();
+        float diffuseLightIntensity = 0;
+        for (Light light : lights) {
+            Float64Vector lightDir = light.getPosition().minus(hit.getPoint());
+            lightDir = lightDir.times(lightDir.norm().inverse());
+            diffuseLightIntensity += light.getIntensity() * Math.max(0f, lightDir.times(hit.getNormal()).floatValue());
+        }
+        float[] rgb = hit.getMaterial().getDiffuseColor().getRGBColorComponents(null);
+        float r = rgb[0] * diffuseLightIntensity;
+        float g = rgb[1] * diffuseLightIntensity;
+        float b = rgb[2] * diffuseLightIntensity;
+        return Optional.of(new Color(r, g, b));
     }
 
     private static class RayHit {
 
-        private final Vector<Float64> hit;
+        private final Vector<Float64> point;
         private final Vector<Float64> normal;
         private final Material material;
 
-        public RayHit(Vector<Float64> hit, Vector<Float64> normal, Material material) {
-            this.hit = hit;
+        public RayHit(Vector<Float64> point, Vector<Float64> normal, Material material) {
+            this.point = point;
             this.normal = normal;
             this.material = material;
         }
 
-        public Vector<Float64> getHit() {
-            return hit;
+        public Vector<Float64> getPoint() {
+            return point;
         }
 
         public Vector<Float64> getNormal() {
