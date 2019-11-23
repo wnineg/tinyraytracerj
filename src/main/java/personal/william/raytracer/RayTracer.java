@@ -12,7 +12,7 @@ public class RayTracer {
     public static void main(String[] args) {
         final Vector3d cameraPos = Vector3d.of(0, 0, 0);
         final UnitVector3d cameraFacing = UnitVector3d.normalize(0, 0, -1);
-        final UnitVector3d cameraUpside = UnitVector3d.normalize(0, 1, 0);
+        final UnitVector3d cameraDownward = UnitVector3d.normalize(0, -1, 0);
         final double fov = Math.PI / 2;
 
         final int width = 1024;
@@ -47,7 +47,7 @@ public class RayTracer {
         scene.putObject(new Sphere(mirror, 4), new Sphere.Positioning(7, 5, -18));
         scene.putObject(floor, planePos);
 
-        Camera camera = scene.setupCamera(cameraPos, cameraFacing, cameraUpside, fov);
+        Camera camera = scene.setupCamera(cameraPos, cameraFacing, cameraDownward, fov);
 
         Image image = camera.renderAsImage(width, height);
 

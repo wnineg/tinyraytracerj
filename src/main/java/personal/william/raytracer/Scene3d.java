@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -43,14 +44,14 @@ public class Scene3d implements Vector3dSpaceScene {
 
         private final Vector3d position;
         private final UnitVector3d faceDirection;
-        private final UnitVector3d upDirection;
+        private final UnitVector3d downDirection;
         private final double fieldOfView;
 
         public PositionedCamera(
-                Vector3d position, UnitVector3d faceDirection, UnitVector3d upDirection, double fieldOfView) {
-            this.position = position;
-            this.faceDirection = faceDirection.normalize();
-            this.upDirection = upDirection.normalize();
+                Vector3d position, UnitVector3d faceDirection, UnitVector3d downDirection, double fieldOfView) {
+            this.position = Objects.requireNonNull(position, "position cannot be null.");
+            this.faceDirection = Objects.requireNonNull(faceDirection, "faceDirection cannot be null.");
+            this.downDirection = Objects.requireNonNull(downDirection, "downDirection cannot be null.");
             this.fieldOfView = fieldOfView;
         }
 
@@ -77,8 +78,8 @@ public class Scene3d implements Vector3dSpaceScene {
             private final Vector3d screenCenter = position.plus(faceDirection);
             private final double fovSideWidth = Math.tan(fieldOfView / 2.0);
             private final double screenRatio;
-            private final UnitVector3d screenXVector = faceDirection.cross(upDirection);
-            private final UnitVector3d screenYVector = upDirection;
+            private final UnitVector3d screenXDir = downDirection.cross(faceDirection);
+            private final UnitVector3d screenYDir = downDirection;
             private final double xFactor;
             private final double yFactor =  fovSideWidth;
 
@@ -145,12 +146,12 @@ public class Scene3d implements Vector3dSpaceScene {
                 for (int i = x0; i <= x1; ++i) {
                     for (int j = y0; j <= y1; ++j) {
                         double x = ((2.0 * ((i + 0.5) / (double) image.getWidth()) - 1) * projectionInfo.xFactor);
-                        double y = -((2.0 * ((j + 0.5) / (double) image.getHeight()) - 1) * projectionInfo.yFactor);
-                        UnitVector3d ray =
+                        double y = ((2.0 * ((j + 0.5) / (double) image.getHeight()) - 1) * projectionInfo.yFactor);
+                        Vector3d pixel =
                                 projectionInfo.screenCenter
-                                        .plus(projectionInfo.screenXVector.times(x))
-                                        .plus(projectionInfo.screenYVector.times(y)).normalize();
-
+                                        .plus(projectionInfo.screenXDir.times(x))
+                                        .plus(projectionInfo.screenYDir.times(y));
+                        UnitVector3d ray = pixel.minus(position).normalize();
                         int rgb = castRay(position, ray, 0).map(Color::getRGB).orElse(bgColor.getRGB());
                         image.setRGB(i, j, rgb);
                     }
