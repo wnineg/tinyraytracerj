@@ -38,7 +38,6 @@ public class Sphere implements SceneObject {
 
     @Override
     public Float64Vector getNormalVector(Float64Vector positioning, Float64Vector point) {
-        Float64Vector normal = Float64Vector.valueOf(point.minus(positioning));
-        return normal.times(normal.norm().inverse());
+        return VectorUtils.normalize(Float64Vector.valueOf(point.minus(positioning)));
     }
 }

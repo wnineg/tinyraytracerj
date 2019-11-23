@@ -8,10 +8,11 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 public class Scene3d implements VectorSpaceScene {
 
-    private Color bgColor = Color.BLACK;
+    private int bgColor = Color.BLACK.getRGB();
 
     private final Collection<PositionedObject<Light>> lights = new ArrayList<>();
     private final Collection<PositionedObject<SceneObject>> objects = new ArrayList<>();
@@ -49,24 +50,6 @@ public class Scene3d implements VectorSpaceScene {
 
         @Override
         public BufferedImage renderAsImage(int width, int height) {
-            final Float64Vector[][] rays = evaluateRays(width, height);
-            final Color[][] frameBuffer = new Color[width][height];
-            for (int i = 0; i < width; ++i) {
-                for (int j = 0; j < height; ++j) {
-                    frameBuffer[i][j] = castRay(rays[i][j]).orElse(bgColor);
-                }
-            }
-
-            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-            for (int x = 0; x < width; ++x) {
-                for (int y = 0; y < height; ++y) {
-                    image.setRGB(x, y, frameBuffer[x][y].getRGB());
-                }
-            }
-            return image;
-        }
-
-        private Float64Vector[][] evaluateRays(int width, int height) {
             final Float64Vector screenCenter = position.plus(faceDirection);
             final float fovSideWidth = (float) (Math.tan(fieldOfView / 2.0));
             final float screenRatio = width / (float) height;
@@ -75,17 +58,17 @@ public class Scene3d implements VectorSpaceScene {
             final float xFactor =  fovSideWidth * screenRatio;
             final float yFactor =  fovSideWidth;
 
-            Float64Vector[][] rays = new Float64Vector[width][height];
+            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
             for (int i = 0; i < width; ++i) {
                 for (int j = 0; j < height; ++j) {
                     float x = (float) ((2.0 * ((i + 0.5) / (float) width) - 1) * xFactor);
                     float y = (float) -((2.0 * ((j + 0.5) / (float) height) - 1) * yFactor);
                     Float64Vector ray = screenCenter.plus(screenXVector.times(x)).plus(screenYVector.times(y));
-                    ray = VectorUtils.normalize(ray);
-                    rays[i][j] = ray;
+
+                    image.setRGB(i, j, castRay(ray).orElse(bgColor));
                 }
             }
-            return rays;
+            return image;
         }
 
         private class RayHit {
@@ -113,16 +96,15 @@ public class Scene3d implements VectorSpaceScene {
             }
         }
 
-        private Optional<Color> castRay(Float64Vector ray) {
+        private OptionalInt castRay(Float64Vector ray) {
             Optional<RayHit> optHit = intersectScene(position, ray);
-            if (! optHit.isPresent()) return Optional.empty();
+            if (! optHit.isPresent()) return OptionalInt.empty();
 
             RayHit hit = optHit.get();
             float diffuseLightIntensity = 0;
             float specularLightIntensity = 0;
             for (PositionedObject<Light> posLight : lights) {
-                Float64Vector lightDir = posLight.position.minus(hit.getPoint());
-                lightDir = lightDir.times(lightDir.norm().inverse());
+                Float64Vector lightDir = VectorUtils.normalize(posLight.position.minus(hit.getPoint()));
 
                 if (checkPointAtShadow(hit.getPoint(), hit.getNormal(), posLight.position, lightDir)) continue;
 
@@ -134,20 +116,24 @@ public class Scene3d implements VectorSpaceScene {
                                 posLight.object, hit.getMaterial());
             }
             float specular = specularLightIntensity * hit.getMaterial().getSpecularAlbedo();
-            float[] rgb = hit.getMaterial().getDiffuseColor().getRGBColorComponents(null);
-            float r = rgb[0] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
-            float g = rgb[1] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
-            float b = rgb[2] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
+            float[] rgbParts = hit.getMaterial().getDiffuseColor().getRGBColorComponents(null);
+            float r = rgbParts[0] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
+            float g = rgbParts[1] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
+            float b = rgbParts[2] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
             float max = Math.max(r, Math.max(g, b));
             if (max > 1) {
                 r = r / max;
                 g = g / max;
                 b = b / max;
             }
-            return Optional.of(new Color(r, g, b));
+            int rgb = Math.round(0b11111111 * r);
+            rgb = (rgb << 8) + Math.round(0b11111111 * g);
+            rgb = (rgb << 8) + Math.round(0b11111111 * b);
+            return OptionalInt.of(rgb);
         }
 
         private Optional<RayHit> intersectScene(Float64Vector orig, Float64Vector dir) {
+            dir = VectorUtils.normalize(dir);
             float shortestDist = Float.MAX_VALUE;
             Float64Vector hit = null;
             Float64Vector normal = null;
@@ -184,6 +170,10 @@ public class Scene3d implements VectorSpaceScene {
 
         private float calculateSpecularIntensity(
                 Float64Vector orig, Float64Vector light, Float64Vector normal, Light lightSource, Material material) {
+            orig = VectorUtils.normalize(orig);
+            light = VectorUtils.normalize(light);
+            normal = VectorUtils.normalize(normal);
+
             Float64Vector reflect = light.minus(normal.times(2.0).times(light.times(normal)));
             float reflectIntensity = reflect.times(orig).floatValue();
             if (reflectIntensity <= 0) return 0f;
@@ -203,7 +193,7 @@ public class Scene3d implements VectorSpaceScene {
 
     @Override
     public void setBackgroundColor(Color color) {
-        this.bgColor = color;
+        this.bgColor = color.getRGB();
     }
 
     @Override
