@@ -12,5 +12,7 @@ public interface Vector3dSpaceScene {
 
     void putLight(Light light, Vector3d position);
 
-    <P extends Positionable.Positioning> void putObject(SceneObject<P> object, P positioning);
+    <P extends Positionable.Positioning> VectorSpaceObjectIdentity putObject(SceneObject<P> object, P positioning);
+    <P extends Positionable.Positioning> VectorSpaceObjectIdentity putObject(
+            SceneObject<P> object, P positioning, String name);
 }

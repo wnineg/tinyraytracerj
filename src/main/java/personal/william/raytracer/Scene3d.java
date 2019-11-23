@@ -4,19 +4,24 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Scene3d implements Vector3dSpaceScene {
 
     private Color bgColor = Color.BLACK;
     private double refractiveIndex = 1;
 
+    private int idCounter = 0;
+
     private final Collection<Lighting> lights = new ArrayList<>();
-    private final Collection<PositionedObject<?, ?>> objects = new ArrayList<>();
+    private final Map<VectorSpaceObjectIdentity, PositionedObject<?, ?>> objectMap = new HashMap<>();
 
     private static class Lighting {
 
@@ -31,12 +36,24 @@ public class Scene3d implements Vector3dSpaceScene {
 
     private static class PositionedObject<O extends SceneObject<P>, P extends Positionable.Positioning> {
 
+        private final VectorSpaceObjectIdentity identity;
+
         private final P positioning;
         private final O object;
 
-        public PositionedObject(P positioning, O object) {
+        public PositionedObject(VectorSpaceObjectIdentity identity, P positioning, O object) {
+            this.identity = identity;
             this.positioning = positioning;
             this.object = object;
+        }
+
+        @Override
+        public String toString() {
+            return object.getClass().getSimpleName() + "[" + identity.getId() + "](" + identity.getName() + ")" +
+                    "{identity=" + identity +
+                    ", positioning=" + positioning +
+                    ", object=" + object +
+                    '}';
         }
     }
 
@@ -209,7 +226,7 @@ public class Scene3d implements Vector3dSpaceScene {
             private Optional<SurfacePoint> intersectScene(Vector3d orig, UnitVector3d dir) {
                 double shortestDist = Double.MAX_VALUE;
                 SurfacePoint surface = null;
-                for (PositionedObject positionedObject : objects) {
+                for (PositionedObject positionedObject : objectMap.values()) {
                     // The type should've already been checked in the construction time of "PositionedObject", therefore
                     // it is safe here to assume the type of the "PositionedObject.positioning" match.
                     @SuppressWarnings("unchecked")
@@ -334,7 +351,19 @@ public class Scene3d implements Vector3dSpaceScene {
     }
 
     @Override
-    public <P extends Positionable.Positioning> void putObject(SceneObject<P> object, P positioning) {
-        objects.add(new PositionedObject<>(positioning, object));
+    public <P extends Positionable.Positioning> VectorSpaceObjectIdentity putObject(
+            SceneObject<P> object, P positioning) {
+        VectorSpaceObjectIdentity identity =
+                new VectorSpaceObjectIdentity(++idCounter, object.toString());
+        objectMap.put(identity, new PositionedObject<>(identity, positioning, object));
+        return identity;
+    }
+
+    @Override
+    public <P extends Positionable.Positioning> VectorSpaceObjectIdentity putObject(
+            SceneObject<P> object, P positioning, String name) {
+        VectorSpaceObjectIdentity identity = new VectorSpaceObjectIdentity(++idCounter, name);
+        objectMap.put(identity, new PositionedObject<>(identity, positioning, object));
+        return identity;
     }
 }

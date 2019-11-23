@@ -22,6 +22,15 @@ public class PlanePositioning implements Positionable.Positioning {
         this.directionY = directionY;
     }
 
+    @Override
+    public String toString() {
+        return "PlanePositioning{" +
+                "origin=" + origin +
+                ", x=" + directionX +
+                ", y=" + directionY +
+                '}';
+    }
+
     public Vector3d getOrigin() {
         return origin;
     }

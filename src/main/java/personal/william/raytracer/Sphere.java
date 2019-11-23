@@ -12,6 +12,11 @@ public class Sphere implements SceneObject<Sphere.Positioning> {
             this.center = center;
         }
 
+        @Override
+        public String toString() {
+            return "SphereCenter=" + center;
+        }
+
         public Positioning(double x, double y, double z) {
             this(Vector3d.of(x, y, z));
         }
