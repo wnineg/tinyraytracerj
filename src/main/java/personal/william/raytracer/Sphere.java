@@ -29,7 +29,7 @@ public class Sphere implements SceneObject {
         float intersectedDist = (float) Math.sqrt(radiusSquare - centerDistSquare);
         double contactDist0 = rayToCenterDist - intersectedDist;
         if (contactDist0 < 0) contactDist0 = rayToCenterDist + intersectedDist;
-        return contactDist0 >= 0 ? Optional.of(dir.times(contactDist0)) : Optional.empty();
+        return contactDist0 >= 0 ? Optional.of(orig.plus(dir.times(contactDist0))) : Optional.empty();
     }
 
     @Override
