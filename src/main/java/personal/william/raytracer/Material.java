@@ -9,16 +9,21 @@ public class Material {
     private final Color diffuseColor;
     private final double reflectionAlbedo;
     private final double specularExponent;
+    private final double refractiveIndex;
+    private final double refractiveAlbedo;
 
     public Material(
             double specularAlbedo,
             double diffuseAlbedo, Color diffuseColor,
-            double reflectionAlbedo, double specularExponent) {
+            double reflectionAlbedo, double specularExponent,
+            double refractiveIndex, double refractiveAlbedo) {
         this.specularAlbedo = specularAlbedo;
         this.diffuseAlbedo = diffuseAlbedo;
         this.diffuseColor = diffuseColor;
         this.reflectionAlbedo = reflectionAlbedo;
         this.specularExponent = specularExponent;
+        this.refractiveIndex = refractiveIndex;
+        this.refractiveAlbedo = refractiveAlbedo;
     }
 
     @Override
@@ -29,6 +34,8 @@ public class Material {
                 ", diffuseColor=" + diffuseColor +
                 ", reflectionAlbedo=" + reflectionAlbedo +
                 ", specularExponent=" + specularExponent +
+                ", refractiveIndex=" + refractiveIndex +
+                ", refractiveAlbedo=" + refractiveAlbedo +
                 '}';
     }
 
@@ -50,5 +57,13 @@ public class Material {
 
     public double getSpecularExponent() {
         return specularExponent;
+    }
+
+    public double getRefractiveIndex() {
+        return refractiveIndex;
+    }
+
+    public double getRefractiveAlbedo() {
+        return refractiveAlbedo;
     }
 }

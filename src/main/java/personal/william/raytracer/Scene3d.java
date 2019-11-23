@@ -12,6 +12,7 @@ import java.util.concurrent.RecursiveAction;
 public class Scene3d implements Vector3dSpaceScene {
 
     private Color bgColor = Color.BLACK;
+    private double refractiveIndex = 1;
 
     private final Collection<PositionedObject<Light>> lights = new ArrayList<>();
     private final Collection<PositionedObject<SceneObject>> objects = new ArrayList<>();
@@ -137,14 +138,15 @@ public class Scene3d implements Vector3dSpaceScene {
                         Vector3d ray =
                                 projectionInfo.screenCenter
                                         .plus(projectionInfo.screenXVector.times(x))
-                                        .plus(projectionInfo.screenYVector.times(y));
+                                        .plus(projectionInfo.screenYVector.times(y)).normalize();
 
-                        image.setRGB(i, j, castRay(position, ray, 0).map(Color::getRGB).orElse(bgColor.getRGB()));
+                        int rgb = castRay(position, ray, 0).map(Color::getRGB).orElse(bgColor.getRGB());
+                        image.setRGB(i, j, rgb);
                     }
                 }
             }
 
-            private Optional<Color> castRay(Vector3d orig, Vector3d ray, int depth) {
+            private Optional<Color> castRay(Vector3d orig, Vector3d ray, final int depth) {
                 if (depth > 4) return Optional.empty();
 
                 Optional<SurfacePoint> optSurface = intersectScene(orig, ray);
@@ -155,11 +157,22 @@ public class Scene3d implements Vector3dSpaceScene {
                 double specularLightIntensity = 0;
 
                 Vector3d reflectDir = reflect(ray, surface.getNormal());
+
+                Optional<Vector3d> optRefractDir =
+                        refract(ray, surface.getNormal(), surface.getMaterial().getRefractiveIndex());
                 Vector3d reflectOrig =
                         reflectDir.dot(surface.getNormal()) < 0
                                 ? surface.getPoint().minus(surface.getNormal().times(1e-3))
                                 : surface.getPoint().plus(surface.getNormal().times(1e-3));
                 Color reflectColor = castRay(reflectOrig, reflectDir, (depth + 1)).orElse(bgColor);
+                Color refractColor = optRefractDir.flatMap(v -> {
+                            Vector3d refractOrig =
+                                    v.dot(surface.getNormal()) < 0
+                                            ? surface.getPoint().minus(surface.getNormal().times(1e-3))
+                                            : surface.getPoint().plus(surface.getNormal().times(1e-3));
+                            return castRay(refractOrig, v, (depth + 1));
+                        })
+                        .orElse(bgColor);
 
                 for (PositionedObject<Light> posLight : lights) {
                     Vector3d lightDir = posLight.position.minus(surface.getPoint()).normalize();
@@ -177,7 +190,8 @@ public class Scene3d implements Vector3dSpaceScene {
                 }
                 return Optional.of(
                         calculateFinalColor(
-                                surface.getMaterial(), diffuseLightIntensity, specularLightIntensity, reflectColor));
+                                surface.getMaterial(), diffuseLightIntensity, specularLightIntensity,
+                                reflectColor, refractColor));
             }
 
             private Optional<SurfacePoint> intersectScene(Vector3d orig, Vector3d dir) {
@@ -209,10 +223,34 @@ public class Scene3d implements Vector3dSpaceScene {
                 return optSurface.map(sf -> sf.getPoint().minus(shadowOrig).norm() < lightDist).orElse(Boolean.FALSE);
             }
 
-            private Vector3d reflect(Vector3d light, Vector3d normal) {
-                light = light.normalize();
+            private Vector3d reflect(Vector3d ray, Vector3d normal) {
+                ray = ray.normalize();
                 normal = normal.normalize();
-                return light.minus(normal.times(2.0).times(light.dot(normal))).normalize();
+                return ray.minus(normal.times(2.0).times(ray.dot(normal))).normalize();
+            }
+
+            private Optional<Vector3d> refract(Vector3d ray, Vector3d normal, double refractiveIndex) {
+                ray = ray.normalize();
+                normal = normal.normalize();
+
+                double c = -ray.dot(normal);
+                if (c > 1) c = 1;
+                else if (c < -1) c = -1;
+
+                double idx1 = Scene3d.this.refractiveIndex;
+                double idx2 = refractiveIndex;
+                if (c < 0) {
+                    c = -c;
+                    normal = normal.negate();
+                    double idx = idx1;
+                    idx1 = idx2;
+                    idx2 = idx;
+                }
+                double r = idx1 / idx2;
+                double nFactor = 1 - (r * r * (1 - (c * c)));
+                return nFactor >= 0
+                        ? Optional.of(ray.times(r).plus(normal.times((r * c) - Math.sqrt(nFactor))).normalize())
+                        : Optional.empty();
             }
 
             private double calculateSpecularIntensity(
@@ -227,22 +265,28 @@ public class Scene3d implements Vector3dSpaceScene {
             }
 
             private Color calculateFinalColor(
-                    Material material, double diffuseLightIntensity, double specularLightIntensity, Color reflectColor) {
+                    Material material, double diffuseLightIntensity, double specularLightIntensity,
+                    Color reflectColor, Color refractColor) {
                 double specular = specularLightIntensity * material.getSpecularAlbedo();
                 float[] diffuseRgbParts = material.getDiffuseColor().getRGBColorComponents(null);
                 float[] reflectRgbParts = reflectColor.getRGBColorComponents(null);
+                float[] refractRgbParts =
+                        refractColor == null ? new float[]{0f, 0f, 0f} : refractColor.getRGBColorComponents(null);
                 double r =
                         (diffuseRgbParts[0] * diffuseLightIntensity * material.getDiffuseAlbedo())
                                 + specular
-                                + (reflectRgbParts[0] * material.getReflectionAlbedo());
+                                + (reflectRgbParts[0] * material.getReflectionAlbedo())
+                                + (refractRgbParts[0] * material.getRefractiveAlbedo());
                 double g =
                         (diffuseRgbParts[1] * diffuseLightIntensity * material.getDiffuseAlbedo())
                                 + specular
-                                + (reflectRgbParts[1] * material.getReflectionAlbedo());
+                                + (reflectRgbParts[1] * material.getReflectionAlbedo())
+                                + (refractRgbParts[1] * material.getRefractiveAlbedo());
                 double b =
                         (diffuseRgbParts[2] * diffuseLightIntensity * material.getDiffuseAlbedo())
                                 + specular
-                                + (reflectRgbParts[2] * material.getReflectionAlbedo());
+                                + (reflectRgbParts[2] * material.getReflectionAlbedo())
+                                + (refractRgbParts[2] * material.getRefractiveAlbedo());
                 double max = Math.max(r, Math.max(g, b));
                 if (max > 1) {
                     r = r / max;
@@ -267,6 +311,11 @@ public class Scene3d implements Vector3dSpaceScene {
     @Override
     public void setBackgroundColor(Color color) {
         this.bgColor = color;
+    }
+
+    @Override
+    public void setRefractiveIndex(float index) {
+        this.refractiveIndex = index;
     }
 
     @Override

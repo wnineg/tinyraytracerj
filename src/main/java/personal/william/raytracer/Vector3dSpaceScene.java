@@ -8,6 +8,8 @@ public interface Vector3dSpaceScene {
 
     void setBackgroundColor(Color color);
 
+    void setRefractiveIndex(float index);
+
     void putLight(Light light, Vector3d position);
 
     void putObject(SceneObject object, Vector3d position);

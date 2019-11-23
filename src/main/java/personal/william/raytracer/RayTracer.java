@@ -19,9 +19,10 @@ public class RayTracer {
         final int height = 768;
 
         Color bgColor = new Color(0.2f, 0.7f, 0.8f);
-        Material ivory = new Material(0.3, 0.6, new Color(0.4f, 0.4f, 0.3f), 0.1, 50);
-        Material redRubber = new Material(0.1, 0.9, new Color(0.3f, 0.1f, 0.1f), 0, 10);
-        Material mirror = new Material(10, 0, new Color(1.0f, 1.0f, 1.0f), 0.8, 142);
+        Material ivory = new Material(0.3, 0.6, new Color(0.4f, 0.4f, 0.3f), 0.1, 50, 1, 0);
+        Material redRubber = new Material(0.1, 0.9, new Color(0.3f, 0.1f, 0.1f), 0, 10, 1, 0);
+        Material mirror = new Material(10, 0, new Color(1.0f, 1.0f, 1.0f), 0.8, 1425, 1, 0);
+        Material glass = new Material(0.5, 0, new Color(0.6f, 0.7f, 0.8f), 0.1, 125, 1.5, 0.8);
 
         Vector3dSpaceScene scene = new Scene3d();
 
@@ -32,7 +33,7 @@ public class RayTracer {
         scene.putLight(new Light(1.7), new Vector3d(30, 20, 30));
 
         scene.putObject(new Sphere(ivory, 2), new Vector3d(-3, 0, -16));
-        scene.putObject(new Sphere(mirror, 2), new Vector3d(-1f, -1.5f, -12f));
+        scene.putObject(new Sphere(glass, 2), new Vector3d(-1f, -1.5f, -12f));
         scene.putObject(new Sphere(redRubber, 3), new Vector3d(1.5, -0.5, -18));
         scene.putObject(new Sphere(mirror, 4), new Vector3d(7, 5, -18));
 
