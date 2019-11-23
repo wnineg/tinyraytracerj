@@ -32,10 +32,10 @@ public class RayTracer {
         scene.putLight(new Light(1.8), Vector3d.of(30, 50, -25));
         scene.putLight(new Light(1.7), Vector3d.of(30, 20, 30));
 
-        scene.putObject(new Sphere(ivory, 2), Vector3d.of(-3, 0, -16));
-        scene.putObject(new Sphere(glass, 2), Vector3d.of(-1f, -1.5f, -12f));
-        scene.putObject(new Sphere(redRubber, 3), Vector3d.of(1.5, -0.5, -18));
-        scene.putObject(new Sphere(mirror, 4), Vector3d.of(7, 5, -18));
+        scene.putObject(new Sphere(ivory, 2), new Sphere.Positioning(-3, 0, -16));
+        scene.putObject(new Sphere(glass, 2), new Sphere.Positioning(-1f, -1.5f, -12f));
+        scene.putObject(new Sphere(redRubber, 3), new Sphere.Positioning(1.5, -0.5, -18));
+        scene.putObject(new Sphere(mirror, 4), new Sphere.Positioning(7, 5, -18));
 
         Camera camera = scene.setupCamera(cameraPos, cameraFacing, cameraUpside, fov);
 

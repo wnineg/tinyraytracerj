@@ -14,16 +14,27 @@ public class Scene3d implements Vector3dSpaceScene {
     private Color bgColor = Color.BLACK;
     private double refractiveIndex = 1;
 
-    private final Collection<PositionedObject<Light>> lights = new ArrayList<>();
-    private final Collection<PositionedObject<SceneObject>> objects = new ArrayList<>();
+    private final Collection<Lighting> lights = new ArrayList<>();
+    private final Collection<PositionedObject<?, ?>> objects = new ArrayList<>();
 
-    private static class PositionedObject<O> {
+    private static class Lighting {
 
         private final Vector3d position;
+        private final Light light;
+
+        public Lighting(Vector3d position, Light light) {
+            this.position = position;
+            this.light = light;
+        }
+    }
+
+    private static class PositionedObject<O extends SceneObject<P>, P extends Positionable.Positioning> {
+
+        private final P positioning;
         private final O object;
 
-        public PositionedObject(Vector3d position, O object) {
-            this.position = position;
+        public PositionedObject(P positioning, O object) {
+            this.positioning = positioning;
             this.object = object;
         }
     }
@@ -174,19 +185,19 @@ public class Scene3d implements Vector3dSpaceScene {
                         })
                         .orElse(bgColor);
 
-                for (PositionedObject<Light> posLight : lights) {
-                    UnitVector3d lightDir = posLight.position.minus(surface.getPoint()).normalize();
+                for (Lighting lighting : lights) {
+                    UnitVector3d lightDir = lighting.position.minus(surface.getPoint()).normalize();
 
-                    if (checkPointAtShadow(surface.getPoint(), surface.getNormal(), posLight.position, lightDir)) {
+                    if (checkPointAtShadow(surface.getPoint(), surface.getNormal(), lighting.position, lightDir)) {
                         continue;
                     }
 
                     diffuseLightIntensity +=
-                            posLight.object.getIntensity() * Math.max(0f, lightDir.dot(surface.getNormal()));
+                            lighting.light.getIntensity() * Math.max(0f, lightDir.dot(surface.getNormal()));
                     specularLightIntensity +=
                             calculateSpecularIntensity(
                                     ray.negate(), lightDir.negate(), surface.getNormal(),
-                                    posLight.object, surface.getMaterial());
+                                    lighting.light, surface.getMaterial());
                 }
                 return Optional.of(
                         calculateFinalColor(
@@ -197,8 +208,12 @@ public class Scene3d implements Vector3dSpaceScene {
             private Optional<SurfacePoint> intersectScene(Vector3d orig, UnitVector3d dir) {
                 double shortestDist = Double.MAX_VALUE;
                 SurfacePoint surface = null;
-                for (PositionedObject<SceneObject> posObj : objects) {
-                    Optional<SurfacePoint> optSurface = posObj.object.cast(posObj.position, orig, dir);
+                for (PositionedObject positionedObject : objects) {
+                    // The type should've already been checked in the construction time of "PositionedObject", therefore
+                    // it is safe here to assume the type of the "PositionedObject.positioning" match.
+                    @SuppressWarnings("unchecked")
+                    Optional<SurfacePoint> optSurface =
+                            positionedObject.object.cast(positionedObject.positioning, orig, dir);
                     if (! optSurface.isPresent()) continue;
 
                     SurfacePoint objSurface = optSurface.get();
@@ -314,11 +329,11 @@ public class Scene3d implements Vector3dSpaceScene {
 
     @Override
     public void putLight(Light light, Vector3d position) {
-        lights.add(new PositionedObject<>(position, light));
+        lights.add(new Lighting(position, light));
     }
 
     @Override
-    public void putObject(SceneObject object, Vector3d position) {
-        objects.add(new PositionedObject<>(position, object));
+    public <P extends Positionable.Positioning> void putObject(SceneObject<P> object, P positioning) {
+        objects.add(new PositionedObject<>(positioning, object));
     }
 }

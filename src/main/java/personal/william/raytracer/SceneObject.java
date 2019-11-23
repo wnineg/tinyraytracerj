@@ -2,9 +2,9 @@ package personal.william.raytracer;
 
 import java.util.Optional;
 
-public interface SceneObject {
+public interface SceneObject<P extends Positionable.Positioning> extends Positionable<P> {
 
     Material getMaterial();
 
-    Optional<SurfacePoint> cast(Vector3d positioning, Vector3d orig, UnitVector3d dir);
+    Optional<SurfacePoint> cast(P positioning, Vector3d orig, UnitVector3d dir);
 }
