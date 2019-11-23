@@ -30,11 +30,6 @@ public class Sphere implements SceneObject<Sphere.Positioning> {
     }
 
     @Override
-    public Material getMaterial() {
-        return material;
-    }
-
-    @Override
     public Optional<SurfacePoint> cast(Positioning positioning, Vector3d orig, UnitVector3d dir) {
         Vector3d center = positioning.getCenter();
         Vector3d ray = center.minus(orig);
