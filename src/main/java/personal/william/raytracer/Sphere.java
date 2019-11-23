@@ -1,9 +1,5 @@
 package personal.william.raytracer;
 
-import org.jscience.mathematics.number.Float64;
-import org.jscience.mathematics.vector.Float64Vector;
-import org.jscience.mathematics.vector.Vector;
-
 import java.util.Optional;
 
 public class Sphere implements SceneObject {
@@ -22,22 +18,22 @@ public class Sphere implements SceneObject {
     }
 
     @Override
-    public Optional<Float64Vector> getFirstIntersection(
-            Float64Vector positioning, Float64Vector orig, Float64Vector dir) {
-        Vector<Float64> ray = positioning.minus(orig);
-        Float64 rayToCenterDist = dir.times(ray);
-        Float64 centerDistSquare = ray.times(ray).minus(rayToCenterDist.times(rayToCenterDist));
-        if (centerDistSquare.floatValue() > (radius * radius)) return Optional.empty();
+    public Optional<Vector3d> getFirstIntersection(
+            Vector3d positioning, Vector3d orig, Vector3d dir) {
+        Vector3d ray = positioning.minus(orig);
+        float rayToCenterDist = dir.dot(ray);
+        float centerDistSquare = ray.dot(ray)- (rayToCenterDist * rayToCenterDist);
+        float radiusSquare = radius * radius;
+        if (centerDistSquare > (radiusSquare)) return Optional.empty();
 
-        Float64 intersectedDist = Float64.valueOf(Math.sqrt((radius * radius) - centerDistSquare.floatValue()));
-        Float64 contactDist0 = rayToCenterDist.minus(intersectedDist);
-        if (contactDist0.compareTo(0) < 0) contactDist0 = rayToCenterDist.plus(intersectedDist);
-        return contactDist0.compareTo(0) >= 0
-                ? Optional.of(dir.times(contactDist0.floatValue())) : Optional.empty();
+        float intersectedDist = (float) Math.sqrt(radiusSquare - centerDistSquare);
+        float contactDist0 = rayToCenterDist - intersectedDist;
+        if (contactDist0 < 0) contactDist0 = rayToCenterDist + intersectedDist;
+        return contactDist0 >= 0 ? Optional.of(dir.times(contactDist0)) : Optional.empty();
     }
 
     @Override
-    public Float64Vector getNormalVector(Float64Vector positioning, Float64Vector point) {
-        return VectorUtils.normalize(Float64Vector.valueOf(point.minus(positioning)));
+    public Vector3d getNormalVector(Vector3d positioning, Vector3d point) {
+        return point.minus(positioning).normalize();
     }
 }

@@ -4,7 +4,7 @@ import java.awt.Image;
 
 public interface Camera {
 
-    VectorSpaceScene getScene();
+    Vector3dSpaceScene getScene();
 
     Image renderAsImage(int width, int height);
 }
