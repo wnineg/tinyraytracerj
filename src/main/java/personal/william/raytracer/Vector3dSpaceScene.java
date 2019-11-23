@@ -4,7 +4,7 @@ import java.awt.Color;
 
 public interface Vector3dSpaceScene {
 
-    Camera setupCamera(Vector3d position, Vector3d faceDirection, Vector3d upDirection, float fieldOfView);
+    Camera setupCamera(Vector3d position, Vector3d faceDirection, Vector3d upDirection, double fieldOfView);
 
     void setBackgroundColor(Color color);
 

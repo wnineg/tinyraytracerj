@@ -4,18 +4,18 @@ import java.util.Objects;
 
 public class Vector3d {
 
-    private final float x;
-    private final float y;
-    private final float z;
+    private final double x;
+    private final double y;
+    private final double z;
 
-    private Float norm;
+    private Double norm;
     private Vector3d normalized;
 
-    public Vector3d(float x, float y, float z) {
+    public Vector3d(double x, double y, double z) {
         this(x, y, z, null, null);
     }
 
-    private Vector3d(float x, float y, float z, Float norm, Vector3d normalized) {
+    private Vector3d(double x, double y, double z, Double norm, Vector3d normalized) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -28,9 +28,9 @@ public class Vector3d {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Vector3d vector3d = (Vector3d) o;
-        return Float.compare(vector3d.x, x) == 0 &&
-                Float.compare(vector3d.y, y) == 0 &&
-                Float.compare(vector3d.z, z) == 0;
+        return Double.compare(vector3d.x, x) == 0 &&
+                Double.compare(vector3d.y, y) == 0 &&
+                Double.compare(vector3d.z, z) == 0;
     }
 
     @Override
@@ -43,19 +43,19 @@ public class Vector3d {
         return "{" + x + ',' + y + ',' + z + '}';
     }
 
-    public final float getX() {
+    public final double getX() {
         return x;
     }
 
-    public final float getY() {
+    public final double getY() {
         return y;
     }
 
-    public final float getZ() {
+    public final double getZ() {
         return z;
     }
 
-    public float norm() {
+    public double norm() {
         return norm != null ? norm : calculateNorm();
     }
 
@@ -79,15 +79,15 @@ public class Vector3d {
         return new Vector3d((this.x - vector.x), (this.y - vector.y), (this.z - vector.z));
     }
 
-    public Vector3d times(float scalar) {
+    public Vector3d times(double scalar) {
         return new Vector3d(x * scalar, y * scalar, z * scalar);
     }
 
-    public Vector3d divide(float scalar) {
+    public Vector3d divide(double scalar) {
         return new Vector3d(x / scalar, y / scalar, z / scalar);
     }
 
-    public float dot(Vector3d vector) {
+    public double dot(Vector3d vector) {
         Objects.requireNonNull(vector, "vector cannot be null.");
 
         return (this.x * vector.x) + (this.y * vector.y) + (this.z * vector.z);
@@ -112,13 +112,13 @@ public class Vector3d {
         return Math.acos(a.dot(b));
     }
 
-    private float calculateNorm() {
-        norm = (float) Math.sqrt((x * x) + (y * y) + (z * z));
+    private double calculateNorm() {
+        norm = Math.sqrt((x * x) + (y * y) + (z * z));
         return norm;
     }
 
     private Vector3d calculateNormalized() {
-        float norm = norm();
+        double norm = norm();
         if (norm == 1) {
             normalized = this;
             return normalized;

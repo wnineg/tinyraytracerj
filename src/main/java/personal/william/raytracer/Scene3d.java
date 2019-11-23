@@ -33,10 +33,10 @@ public class Scene3d implements Vector3dSpaceScene {
         private final Vector3d position;
         private final Vector3d faceDirection;
         private final Vector3d upDirection;
-        private final float fieldOfView;
+        private final double fieldOfView;
 
         public PositionedCamera(
-                Vector3d position, Vector3d faceDirection, Vector3d upDirection, float fieldOfView) {
+                Vector3d position, Vector3d faceDirection, Vector3d upDirection, double fieldOfView) {
             this.position = position;
             this.faceDirection = faceDirection.normalize();
             this.upDirection = upDirection.normalize();
@@ -64,15 +64,15 @@ public class Scene3d implements Vector3dSpaceScene {
 
         private class ProjectionInfo {
             private final Vector3d screenCenter = position.plus(faceDirection);
-            private final float fovSideWidth = (float) (Math.tan(fieldOfView / 2.0));
-            private final float screenRatio;
+            private final double fovSideWidth = Math.tan(fieldOfView / 2.0);
+            private final double screenRatio;
             private final Vector3d screenXVector = faceDirection.cross(upDirection);
             private final Vector3d screenYVector = upDirection;
-            private final float xFactor;
-            private final float yFactor =  fovSideWidth;
+            private final double xFactor;
+            private final double yFactor =  fovSideWidth;
 
             private ProjectionInfo(int width, int height) {
-                screenRatio = width / (float) height;
+                screenRatio = width / (double) height;
                 xFactor =  fovSideWidth * screenRatio;
             }
         }
@@ -133,10 +133,8 @@ public class Scene3d implements Vector3dSpaceScene {
             private void render() {
                 for (int i = x0; i <= x1; ++i) {
                     for (int j = y0; j <= y1; ++j) {
-                        float x =
-                                (float) ((2.0 * ((i + 0.5) / (float) image.getWidth()) - 1) * projectionInfo.xFactor);
-                        float y =
-                                (float) -((2.0 * ((j + 0.5) / (float) image.getHeight()) - 1) * projectionInfo.yFactor);
+                        double x = ((2.0 * ((i + 0.5) / (double) image.getWidth()) - 1) * projectionInfo.xFactor);
+                        double y = -((2.0 * ((j + 0.5) / (double) image.getHeight()) - 1) * projectionInfo.yFactor);
                         Vector3d ray =
                                 projectionInfo.screenCenter
                                         .plus(projectionInfo.screenXVector.times(x))
@@ -177,8 +175,8 @@ public class Scene3d implements Vector3dSpaceScene {
                 if (! optHit.isPresent()) return OptionalInt.empty();
 
                 RayHit hit = optHit.get();
-                float diffuseLightIntensity = 0;
-                float specularLightIntensity = 0;
+                double diffuseLightIntensity = 0;
+                double specularLightIntensity = 0;
                 for (PositionedObject<Light> posLight : lights) {
                     Vector3d lightDir = posLight.position.minus(hit.getPoint()).normalize();
 
@@ -191,26 +189,26 @@ public class Scene3d implements Vector3dSpaceScene {
                                     ray.negate(), lightDir.negate(), hit.getNormal(),
                                     posLight.object, hit.getMaterial());
                 }
-                float specular = specularLightIntensity * hit.getMaterial().getSpecularAlbedo();
+                double specular = specularLightIntensity * hit.getMaterial().getSpecularAlbedo();
                 float[] rgbParts = hit.getMaterial().getDiffuseColor().getRGBColorComponents(null);
-                float r = rgbParts[0] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
-                float g = rgbParts[1] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
-                float b = rgbParts[2] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
-                float max = Math.max(r, Math.max(g, b));
+                double r = rgbParts[0] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
+                double g = rgbParts[1] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
+                double b = rgbParts[2] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
+                double max = Math.max(r, Math.max(g, b));
                 if (max > 1) {
                     r = r / max;
                     g = g / max;
                     b = b / max;
                 }
-                int rgb = Math.round(0b11111111 * r);
-                rgb = (rgb << 8) + Math.round(0b11111111 * g);
-                rgb = (rgb << 8) + Math.round(0b11111111 * b);
+                int rgb = Math.round(0b11111111 * (float) r);
+                rgb = (rgb << 8) + Math.round(0b11111111 * (float) g);
+                rgb = (rgb << 8) + Math.round(0b11111111 * (float) b);
                 return OptionalInt.of(rgb);
             }
 
             private Optional<RayHit> intersectScene(Vector3d orig, Vector3d dir) {
                 dir = dir.normalize();
-                float shortestDist = Float.MAX_VALUE;
+                double shortestDist = Double.MAX_VALUE;
                 Vector3d hit = null;
                 Vector3d normal = null;
                 Material material = null;
@@ -219,7 +217,7 @@ public class Scene3d implements Vector3dSpaceScene {
                     if (! optHit.isPresent()) continue;
 
                     Vector3d tmpHit = optHit.get();
-                    float dist = tmpHit.norm();
+                    double dist = tmpHit.norm();
                     if (dist >= shortestDist) continue;
 
                     shortestDist = dist;
@@ -234,9 +232,9 @@ public class Scene3d implements Vector3dSpaceScene {
 
             private boolean checkPointAtShadow(
                     Vector3d point, Vector3d normal, Vector3d lightPos, Vector3d lightDir) {
-                float lightDist = lightPos.minus(point).norm();
+                double lightDist = lightPos.minus(point).norm();
                 Vector3d shadowOrig = normal.dot(lightDir) < 0
-                        ? point.minus(normal.times(1e-3f)) : point.plus(normal.times(1e-3f));
+                        ? point.minus(normal.times(1e-3)) : point.plus(normal.times(1e-3));
                 Optional<RayHit> OptHit = intersectScene(shadowOrig, lightDir);
                 if (! OptHit.isPresent()) return false;
 
@@ -244,27 +242,24 @@ public class Scene3d implements Vector3dSpaceScene {
                 return (hit.getPoint().minus(shadowOrig)).norm() < lightDist;
             }
 
-            private float calculateSpecularIntensity(
+            private double calculateSpecularIntensity(
                     Vector3d orig, Vector3d light, Vector3d normal,
                     Light lightSource, Material material) {
                 orig = orig.normalize();
                 light = light.normalize();
                 normal = normal.normalize();
 
-                Vector3d reflect = light.minus(normal.times(2.0f).times(light.dot(normal)));
-                float reflectIntensity = reflect.dot(orig);
-                if (reflectIntensity <= 0) return 0f;
-                return
-                        (float)
-                                (lightSource.getIntensity()
-                                        * Math.pow(reflectIntensity, material.getSpecularExponent()));
+                Vector3d reflect = light.minus(normal.times(2.0).times(light.dot(normal)));
+                double reflectIntensity = reflect.dot(orig);
+                if (reflectIntensity <= 0) return 0;
+                return (lightSource.getIntensity() * Math.pow(reflectIntensity, material.getSpecularExponent()));
             }
         }
     }
 
     @Override
     public Camera setupCamera(
-            Vector3d position, Vector3d faceDirection, Vector3d upDirection, float fieldOfView) {
+            Vector3d position, Vector3d faceDirection, Vector3d upDirection, double fieldOfView) {
         if (faceDirection.dot(upDirection) != 0) {
             throw new IllegalArgumentException(
                     "The faceDirection and upDirection are not perpendicular to each other.");

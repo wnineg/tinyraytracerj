@@ -2,13 +2,13 @@ package personal.william.raytracer;
 
 public class Light {
 
-    private final float intensity;
+    private final double intensity;
 
-    public Light(float intensity) {
+    public Light(double intensity) {
         this.intensity = intensity;
     }
 
-    public float getIntensity() {
+    public double getIntensity() {
         return intensity;
     }
 }

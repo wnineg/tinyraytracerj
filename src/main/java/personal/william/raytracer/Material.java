@@ -4,23 +4,23 @@ import java.awt.Color;
 
 public class Material {
 
-    private final float specularAlbedo;
-    private final float diffuseAlbedo;
+    private final double specularAlbedo;
+    private final double diffuseAlbedo;
     private final Color diffuseColor;
-    private final float specularExponent;
+    private final double specularExponent;
 
-    public Material(float specularAlbedo, float diffuseAlbedo, Color diffuseColor, float specularExponent) {
+    public Material(double specularAlbedo, double diffuseAlbedo, Color diffuseColor, double specularExponent) {
         this.specularAlbedo = specularAlbedo;
         this.diffuseAlbedo = diffuseAlbedo;
         this.diffuseColor = diffuseColor;
         this.specularExponent = specularExponent;
     }
 
-    public float getSpecularAlbedo() {
+    public double getSpecularAlbedo() {
         return specularAlbedo;
     }
 
-    public float getDiffuseAlbedo() {
+    public double getDiffuseAlbedo() {
         return diffuseAlbedo;
     }
 
@@ -28,7 +28,7 @@ public class Material {
         return diffuseColor;
     }
 
-    public float getSpecularExponent() {
+    public double getSpecularExponent() {
         return specularExponent;
     }
 }
