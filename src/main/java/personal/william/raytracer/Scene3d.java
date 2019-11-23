@@ -144,86 +144,60 @@ public class Scene3d implements Vector3dSpaceScene {
                 }
             }
 
-            private class RayHit {
-
-                private final Vector3d point;
-                private final Vector3d normal;
-                private final Material material;
-
-                public RayHit(Vector3d point, Vector3d normal, Material material) {
-                    this.point = point;
-                    this.normal = normal;
-                    this.material = material;
-                }
-
-                public Vector3d getPoint() {
-                    return point;
-                }
-
-                public Vector3d getNormal() {
-                    return normal;
-                }
-
-                public Material getMaterial() {
-                    return material;
-                }
-            }
-
             private Optional<Color> castRay(Vector3d orig, Vector3d ray, int depth) {
                 if (depth > 4) return Optional.empty();
 
-                Optional<RayHit> optHit = intersectScene(orig, ray);
-                if (! optHit.isPresent()) return Optional.empty();
+                Optional<SurfacePoint> optSurface = intersectScene(orig, ray);
+                if (! optSurface.isPresent()) return Optional.empty();
 
-                RayHit hit = optHit.get();
+                SurfacePoint surface = optSurface.get();
                 double diffuseLightIntensity = 0;
                 double specularLightIntensity = 0;
 
-                Vector3d reflectDir = reflect(ray, hit.getNormal());
+                Vector3d reflectDir = reflect(ray, surface.getNormal());
                 Vector3d reflectOrig =
-                        reflectDir.dot(hit.getNormal()) < 0
-                                ? hit.getPoint().minus(hit.getNormal().times(1e-3))
-                                : hit.getPoint().plus(hit.getNormal().times(1e-3));
+                        reflectDir.dot(surface.getNormal()) < 0
+                                ? surface.getPoint().minus(surface.getNormal().times(1e-3))
+                                : surface.getPoint().plus(surface.getNormal().times(1e-3));
                 Color reflectColor = castRay(reflectOrig, reflectDir, (depth + 1)).orElse(bgColor);
 
                 for (PositionedObject<Light> posLight : lights) {
-                    Vector3d lightDir = posLight.position.minus(hit.getPoint()).normalize();
+                    Vector3d lightDir = posLight.position.minus(surface.getPoint()).normalize();
 
-                    if (checkPointAtShadow(hit.getPoint(), hit.getNormal(), posLight.position, lightDir)) continue;
+                    if (checkPointAtShadow(surface.getPoint(), surface.getNormal(), posLight.position, lightDir)) {
+                        continue;
+                    }
 
                     diffuseLightIntensity +=
-                            posLight.object.getIntensity() * Math.max(0f, lightDir.dot(hit.getNormal()));
+                            posLight.object.getIntensity() * Math.max(0f, lightDir.dot(surface.getNormal()));
                     specularLightIntensity +=
                             calculateSpecularIntensity(
-                                    ray.negate(), lightDir.negate(), hit.getNormal(),
-                                    posLight.object, hit.getMaterial());
+                                    ray.negate(), lightDir.negate(), surface.getNormal(),
+                                    posLight.object, surface.getMaterial());
                 }
                 return Optional.of(
-                        calculateFinalColor(hit.material, diffuseLightIntensity, specularLightIntensity, reflectColor));
+                        calculateFinalColor(
+                                surface.getMaterial(), diffuseLightIntensity, specularLightIntensity, reflectColor));
             }
 
-            private Optional<RayHit> intersectScene(Vector3d orig, Vector3d dir) {
+            private Optional<SurfacePoint> intersectScene(Vector3d orig, Vector3d dir) {
                 dir = dir.normalize();
                 double shortestDist = Double.MAX_VALUE;
-                Vector3d hit = null;
-                Vector3d normal = null;
-                Material material = null;
+                SurfacePoint surface = null;
                 for (PositionedObject<SceneObject> posObj : objects) {
-                    Optional<Vector3d> optHit = posObj.object.getFirstIntersection(posObj.position, orig, dir);
-                    if (! optHit.isPresent()) continue;
+                    Optional<SurfacePoint> optSurface = posObj.object.cast(posObj.position, orig, dir);
+                    if (! optSurface.isPresent()) continue;
 
-                    Vector3d tmpHit = optHit.get();
-                    double dist = tmpHit.norm();
-                    if (dist >= shortestDist) continue;
+                    SurfacePoint objSurface = optSurface.get();
+                    double hitDist = objSurface.getPoint().norm();
+                    if (hitDist >= shortestDist) continue;
 
-                    shortestDist = dist;
-                    hit = tmpHit;
-                    normal = posObj.object.getNormalVector(posObj.position, hit);
-                    material = posObj.object.getMaterial();
+                    shortestDist = hitDist;
+                    surface = objSurface;
                 }
 
                 // Ignore the rays which go too far away
-                return shortestDist < 1000 ? Optional.of(new RayHit(hit, normal, material)) : Optional.empty();
+                return shortestDist < 1000 ? Optional.ofNullable(surface) : Optional.empty();
             }
 
             private boolean checkPointAtShadow(
@@ -231,11 +205,8 @@ public class Scene3d implements Vector3dSpaceScene {
                 double lightDist = lightPos.minus(point).norm();
                 Vector3d shadowOrig = normal.dot(lightDir) < 0
                         ? point.minus(normal.times(1e-3)) : point.plus(normal.times(1e-3));
-                Optional<RayHit> OptHit = intersectScene(shadowOrig, lightDir);
-                if (! OptHit.isPresent()) return false;
-
-                RayHit hit = OptHit.get();
-                return (hit.getPoint().minus(shadowOrig)).norm() < lightDist;
+                Optional<SurfacePoint> optSurface = intersectScene(shadowOrig, lightDir);
+                return optSurface.map(sf -> sf.getPoint().minus(shadowOrig).norm() < lightDist).orElse(Boolean.FALSE);
             }
 
             private Vector3d reflect(Vector3d light, Vector3d normal) {

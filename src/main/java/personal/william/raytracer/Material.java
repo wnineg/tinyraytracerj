@@ -21,6 +21,17 @@ public class Material {
         this.specularExponent = specularExponent;
     }
 
+    @Override
+    public String toString() {
+        return "Material{" +
+                "specularAlbedo=" + specularAlbedo +
+                ", diffuseAlbedo=" + diffuseAlbedo +
+                ", diffuseColor=" + diffuseColor +
+                ", reflectionAlbedo=" + reflectionAlbedo +
+                ", specularExponent=" + specularExponent +
+                '}';
+    }
+
     public double getSpecularAlbedo() {
         return specularAlbedo;
     }
