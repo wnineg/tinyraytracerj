@@ -22,7 +22,7 @@ public class GridPatternParallelogramPlane implements SceneObject<ParallelogramP
         Objects.requireNonNull(orig, "orig cannot be null.");
         Objects.requireNonNull(ray, "ray cannot be null.");
 
-        UnitVector3d normal = positioning.getDirectionX().cross(positioning.getDirectionY());
+        UnitVector3d normal = positioning.getDirectionX().cross(positioning.getDirectionY()).normalize();
         double fluxLen = normal.dot(ray);
         if (fluxLen == 0) return Optional.empty();
         if (fluxLen > 0) {

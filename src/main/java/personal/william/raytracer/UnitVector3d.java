@@ -47,12 +47,6 @@ public class UnitVector3d extends Vector3d {
 
             return this;
         }
-        @Override
-        public UnitVector3d cross(UnitVector3d vector) {
-            Objects.requireNonNull(vector, "vector cannot be null.");
-
-            return this;
-        }
 
         @Override
         public double getAngle(Vector3d vector) {
@@ -92,15 +86,6 @@ public class UnitVector3d extends Vector3d {
     @Override
     public UnitVector3d negate() {
         return new OneUnitVector(-getX(), -getY(), -getZ());
-    }
-
-    public UnitVector3d cross(UnitVector3d vector) {
-        Objects.requireNonNull(vector, "vector cannot be null.");
-
-        return new OneUnitVector(
-                ((this.getY() * vector.getZ()) - (this.getZ() * vector.getY())),
-                ((this.getX() * vector.getZ()) - (this.getZ() * vector.getX())),
-                ((this.getX() * vector.getY()) - (this.getY() * vector.getX())));
     }
 
     private static class OneUnitVector extends UnitVector3d {

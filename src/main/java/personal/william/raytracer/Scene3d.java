@@ -95,7 +95,7 @@ public class Scene3d implements Vector3dSpaceScene {
             private final Vector3d screenCenter = position.plus(faceDirection);
             private final double fovSideWidth = Math.tan(fieldOfView / 2.0);
             private final double screenRatio;
-            private final UnitVector3d screenXDir = downDirection.cross(faceDirection);
+            private final UnitVector3d screenXDir = downDirection.cross(faceDirection).normalize();
             private final UnitVector3d screenYDir = downDirection;
             private final double xFactor;
             private final double yFactor =  fovSideWidth;
