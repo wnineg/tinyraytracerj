@@ -23,10 +23,19 @@ public class RayTracer {
         Material redRubber = new Material(0.1, 0.9, new Color(0.3f, 0.1f, 0.1f), 0, 10, 1, 0);
         Material mirror = new Material(10, 0, new Color(1.0f, 1.0f, 1.0f), 0.8, 1425, 1, 0);
         Material glass = new Material(0.5, 0, new Color(0.6f, 0.7f, 0.8f), 0.1, 125, 1.5, 0.8);
+        Material solidWhite = new Material(0.4, 0.6, Color.WHITE, 0, 80, 1, 0);
+        Material solidOrange = new Material(0.4, 0.6, Color.ORANGE, 0, 80, 1, 0);
+
+        Material[][] alternatingGrid = new Material[][]{{solidWhite, solidOrange}, {solidOrange, solidWhite}};
+        GridPatternPlane.Pattern pattern = new GridPatternPlane.Pattern(1, 1, alternatingGrid);
+        GridPatternPlane floor = new GridPatternPlane(10, 10, pattern);
 
         Vector3dSpaceScene scene = new Scene3d();
 
         scene.setBackgroundColor(bgColor);
+
+        Vector3d planeOrig = Vector3d.of(-5, -4, -20);
+        PlanePositioning planePos = new PlanePositioning(planeOrig, UnitVector3d.X, UnitVector3d.Z);
 
         scene.putLight(new Light(1.5), Vector3d.of(-20, 20, 20));
         scene.putLight(new Light(1.8), Vector3d.of(30, 50, -25));
@@ -36,6 +45,7 @@ public class RayTracer {
         scene.putObject(new Sphere(glass, 2), new Sphere.Positioning(-1f, -1.5f, -12f));
         scene.putObject(new Sphere(redRubber, 3), new Sphere.Positioning(1.5, -0.5, -18));
         scene.putObject(new Sphere(mirror, 4), new Sphere.Positioning(7, 5, -18));
+        scene.putObject(floor, planePos);
 
         Camera camera = scene.setupCamera(cameraPos, cameraFacing, cameraUpside, fov);
 
