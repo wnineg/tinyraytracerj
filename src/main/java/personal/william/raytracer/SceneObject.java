@@ -6,5 +6,5 @@ public interface SceneObject {
 
     Material getMaterial();
 
-    Optional<SurfacePoint> cast(Vector3d positioning, Vector3d orig, Vector3d dir);
+    Optional<SurfacePoint> cast(Vector3d positioning, Vector3d orig, UnitVector3d dir);
 }

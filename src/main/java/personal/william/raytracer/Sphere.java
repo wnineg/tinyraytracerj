@@ -19,7 +19,7 @@ public class Sphere implements SceneObject {
 
     @Override
     public Optional<SurfacePoint> cast(
-            Vector3d positioning, Vector3d orig, Vector3d dir) {
+            Vector3d positioning, Vector3d orig, UnitVector3d dir) {
         Vector3d ray = positioning.minus(orig);
         double rayToCenterDist = dir.dot(ray);
         double centerDistSquare = ray.dot(ray) - (rayToCenterDist * rayToCenterDist);
@@ -32,7 +32,7 @@ public class Sphere implements SceneObject {
         if (hitDist < 0) return Optional.empty();
 
         Vector3d point = orig.plus(dir.times(hitDist));
-        Vector3d normal = point.minus(positioning).normalize();
+        UnitVector3d normal = point.minus(positioning).normalize();
         return Optional.of(new SurfacePoint(this, point, normal, material));
     }
 

@@ -5,10 +5,10 @@ public class SurfacePoint {
     private final SceneObject object;
 
     private final Vector3d point;
-    private final Vector3d normal;
+    private final UnitVector3d normal;
     private final Material material;
 
-    public SurfacePoint(SceneObject object, Vector3d point, Vector3d normal, Material material) {
+    public SurfacePoint(SceneObject object, Vector3d point, UnitVector3d normal, Material material) {
         this.object = object;
         this.point = point;
         this.normal = normal;
@@ -32,7 +32,7 @@ public class SurfacePoint {
         return point;
     }
 
-    public Vector3d getNormal() {
+    public UnitVector3d getNormal() {
         return normal;
     }
 

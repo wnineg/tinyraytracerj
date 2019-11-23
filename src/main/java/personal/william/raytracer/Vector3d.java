@@ -9,18 +9,15 @@ public class Vector3d {
     private final double z;
 
     private Double norm;
-    private Vector3d normalized;
 
-    public Vector3d(double x, double y, double z) {
-        this(x, y, z, null, null);
-    }
-
-    private Vector3d(double x, double y, double z, Double norm, Vector3d normalized) {
+    protected Vector3d(double x, double y, double z) {
         this.x = x;
         this.y = y;
         this.z = z;
-        this.norm = norm;
-        this.normalized = normalized;
+    }
+
+    public static Vector3d of(double x, double y, double z) {
+        return (x == 0 && y == 0 && z == 0) ? UnitVector3d.ZERO : new Vector3d(x, y, z);
     }
 
     @Override
@@ -59,8 +56,8 @@ public class Vector3d {
         return norm != null ? norm : calculateNorm();
     }
 
-    public Vector3d normalize() {
-        return normalized != null ? normalized : calculateNormalized();
+    public UnitVector3d normalize() {
+        return UnitVector3d.normalize(this);
     }
 
     public Vector3d negate() {
@@ -70,17 +67,17 @@ public class Vector3d {
     public Vector3d plus(Vector3d vector) {
         Objects.requireNonNull(vector, "vector cannot be null.");
 
-        return new Vector3d((this.x + vector.x), (this.y + vector.y), (this.z + vector.z));
+        return Vector3d.of((this.x + vector.x), (this.y + vector.y), (this.z + vector.z));
     }
 
     public Vector3d minus(Vector3d vector) {
         Objects.requireNonNull(vector, "vector cannot be null.");
 
-        return new Vector3d((this.x - vector.x), (this.y - vector.y), (this.z - vector.z));
+        return Vector3d.of((this.x - vector.x), (this.y - vector.y), (this.z - vector.z));
     }
 
     public Vector3d times(double scalar) {
-        return new Vector3d(x * scalar, y * scalar, z * scalar);
+        return scalar == 0 ? UnitVector3d.ZERO : new Vector3d(x * scalar, y * scalar, z * scalar);
     }
 
     public Vector3d divide(double scalar) {
@@ -97,6 +94,8 @@ public class Vector3d {
 
     public Vector3d cross(Vector3d vector) {
         Objects.requireNonNull(vector, "vector cannot be null.");
+
+        if (vector.norm() == 0) return UnitVector3d.ZERO;
 
         return new Vector3d(
                 ((this.y * vector.z) - (this.z * vector.y)),
@@ -117,16 +116,5 @@ public class Vector3d {
     private double calculateNorm() {
         norm = Math.sqrt((x * x) + (y * y) + (z * z));
         return norm;
-    }
-
-    private Vector3d calculateNormalized() {
-        double norm = norm();
-        if (norm == 0 || norm == 1) {
-            normalized = this;
-            return normalized;
-        }
-
-        normalized = divide(norm);
-        return normalized;
     }
 }

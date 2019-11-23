@@ -31,12 +31,12 @@ public class Scene3d implements Vector3dSpaceScene {
     private class PositionedCamera implements Camera {
 
         private final Vector3d position;
-        private final Vector3d faceDirection;
-        private final Vector3d upDirection;
+        private final UnitVector3d faceDirection;
+        private final UnitVector3d upDirection;
         private final double fieldOfView;
 
         public PositionedCamera(
-                Vector3d position, Vector3d faceDirection, Vector3d upDirection, double fieldOfView) {
+                Vector3d position, UnitVector3d faceDirection, UnitVector3d upDirection, double fieldOfView) {
             this.position = position;
             this.faceDirection = faceDirection.normalize();
             this.upDirection = upDirection.normalize();
@@ -66,8 +66,8 @@ public class Scene3d implements Vector3dSpaceScene {
             private final Vector3d screenCenter = position.plus(faceDirection);
             private final double fovSideWidth = Math.tan(fieldOfView / 2.0);
             private final double screenRatio;
-            private final Vector3d screenXVector = faceDirection.cross(upDirection);
-            private final Vector3d screenYVector = upDirection;
+            private final UnitVector3d screenXVector = faceDirection.cross(upDirection);
+            private final UnitVector3d screenYVector = upDirection;
             private final double xFactor;
             private final double yFactor =  fovSideWidth;
 
@@ -135,7 +135,7 @@ public class Scene3d implements Vector3dSpaceScene {
                     for (int j = y0; j <= y1; ++j) {
                         double x = ((2.0 * ((i + 0.5) / (double) image.getWidth()) - 1) * projectionInfo.xFactor);
                         double y = -((2.0 * ((j + 0.5) / (double) image.getHeight()) - 1) * projectionInfo.yFactor);
-                        Vector3d ray =
+                        UnitVector3d ray =
                                 projectionInfo.screenCenter
                                         .plus(projectionInfo.screenXVector.times(x))
                                         .plus(projectionInfo.screenYVector.times(y)).normalize();
@@ -146,7 +146,7 @@ public class Scene3d implements Vector3dSpaceScene {
                 }
             }
 
-            private Optional<Color> castRay(Vector3d orig, Vector3d ray, final int depth) {
+            private Optional<Color> castRay(Vector3d orig, UnitVector3d ray, final int depth) {
                 if (depth > 4) return Optional.empty();
 
                 Optional<SurfacePoint> optSurface = intersectScene(orig, ray);
@@ -156,9 +156,9 @@ public class Scene3d implements Vector3dSpaceScene {
                 double diffuseLightIntensity = 0;
                 double specularLightIntensity = 0;
 
-                Vector3d reflectDir = reflect(ray, surface.getNormal());
+                UnitVector3d reflectDir = reflect(ray, surface.getNormal());
 
-                Optional<Vector3d> optRefractDir =
+                Optional<UnitVector3d> optRefractDir =
                         refract(ray, surface.getNormal(), surface.getMaterial().getRefractiveIndex());
                 Vector3d reflectOrig =
                         reflectDir.dot(surface.getNormal()) < 0
@@ -175,7 +175,7 @@ public class Scene3d implements Vector3dSpaceScene {
                         .orElse(bgColor);
 
                 for (PositionedObject<Light> posLight : lights) {
-                    Vector3d lightDir = posLight.position.minus(surface.getPoint()).normalize();
+                    UnitVector3d lightDir = posLight.position.minus(surface.getPoint()).normalize();
 
                     if (checkPointAtShadow(surface.getPoint(), surface.getNormal(), posLight.position, lightDir)) {
                         continue;
@@ -194,8 +194,7 @@ public class Scene3d implements Vector3dSpaceScene {
                                 reflectColor, refractColor));
             }
 
-            private Optional<SurfacePoint> intersectScene(Vector3d orig, Vector3d dir) {
-                dir = dir.normalize();
+            private Optional<SurfacePoint> intersectScene(Vector3d orig, UnitVector3d dir) {
                 double shortestDist = Double.MAX_VALUE;
                 SurfacePoint surface = null;
                 for (PositionedObject<SceneObject> posObj : objects) {
@@ -215,7 +214,7 @@ public class Scene3d implements Vector3dSpaceScene {
             }
 
             private boolean checkPointAtShadow(
-                    Vector3d point, Vector3d normal, Vector3d lightPos, Vector3d lightDir) {
+                    Vector3d point, UnitVector3d normal, Vector3d lightPos, UnitVector3d lightDir) {
                 double lightDist = lightPos.minus(point).norm();
                 Vector3d shadowOrig = normal.dot(lightDir) < 0
                         ? point.minus(normal.times(1e-3)) : point.plus(normal.times(1e-3));
@@ -223,16 +222,11 @@ public class Scene3d implements Vector3dSpaceScene {
                 return optSurface.map(sf -> sf.getPoint().minus(shadowOrig).norm() < lightDist).orElse(Boolean.FALSE);
             }
 
-            private Vector3d reflect(Vector3d ray, Vector3d normal) {
-                ray = ray.normalize();
-                normal = normal.normalize();
+            private UnitVector3d reflect(UnitVector3d ray, UnitVector3d normal) {
                 return ray.minus(normal.times(2.0).times(ray.dot(normal))).normalize();
             }
 
-            private Optional<Vector3d> refract(Vector3d ray, Vector3d normal, double refractiveIndex) {
-                ray = ray.normalize();
-                normal = normal.normalize();
-
+            private Optional<UnitVector3d> refract(UnitVector3d ray, UnitVector3d normal, double refractiveIndex) {
                 double c = -ray.dot(normal);
                 if (c > 1) c = 1;
                 else if (c < -1) c = -1;
@@ -254,7 +248,7 @@ public class Scene3d implements Vector3dSpaceScene {
             }
 
             private double calculateSpecularIntensity(
-                    Vector3d orig, Vector3d light, Vector3d normal,
+                    Vector3d orig, UnitVector3d light, UnitVector3d normal,
                     Light lightSource, Material material) {
                 orig = orig.normalize();
 
@@ -300,7 +294,7 @@ public class Scene3d implements Vector3dSpaceScene {
 
     @Override
     public Camera setupCamera(
-            Vector3d position, Vector3d faceDirection, Vector3d upDirection, double fieldOfView) {
+            Vector3d position, UnitVector3d faceDirection, UnitVector3d upDirection, double fieldOfView) {
         if (faceDirection.dot(upDirection) != 0) {
             throw new IllegalArgumentException(
                     "The faceDirection and upDirection are not perpendicular to each other.");

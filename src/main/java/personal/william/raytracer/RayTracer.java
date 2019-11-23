@@ -10,9 +10,9 @@ import java.awt.Image;
 public class RayTracer {
 
     public static void main(String[] args) {
-        final Vector3d cameraPos = new Vector3d(0, 0, 0);
-        final Vector3d cameraFacing = new Vector3d(0, 0, -1);
-        final Vector3d cameraUpside = new Vector3d(0, 1, 0);
+        final Vector3d cameraPos = Vector3d.of(0, 0, 0);
+        final UnitVector3d cameraFacing = UnitVector3d.normalize(0, 0, -1);
+        final UnitVector3d cameraUpside = UnitVector3d.normalize(0, 1, 0);
         final double fov = Math.PI / 2;
 
         final int width = 1024;
@@ -28,14 +28,14 @@ public class RayTracer {
 
         scene.setBackgroundColor(bgColor);
 
-        scene.putLight(new Light(1.5), new Vector3d(-20, 20, 20));
-        scene.putLight(new Light(1.8), new Vector3d(30, 50, -25));
-        scene.putLight(new Light(1.7), new Vector3d(30, 20, 30));
+        scene.putLight(new Light(1.5), Vector3d.of(-20, 20, 20));
+        scene.putLight(new Light(1.8), Vector3d.of(30, 50, -25));
+        scene.putLight(new Light(1.7), Vector3d.of(30, 20, 30));
 
-        scene.putObject(new Sphere(ivory, 2), new Vector3d(-3, 0, -16));
-        scene.putObject(new Sphere(glass, 2), new Vector3d(-1f, -1.5f, -12f));
-        scene.putObject(new Sphere(redRubber, 3), new Vector3d(1.5, -0.5, -18));
-        scene.putObject(new Sphere(mirror, 4), new Vector3d(7, 5, -18));
+        scene.putObject(new Sphere(ivory, 2), Vector3d.of(-3, 0, -16));
+        scene.putObject(new Sphere(glass, 2), Vector3d.of(-1f, -1.5f, -12f));
+        scene.putObject(new Sphere(redRubber, 3), Vector3d.of(1.5, -0.5, -18));
+        scene.putObject(new Sphere(mirror, 4), Vector3d.of(7, 5, -18));
 
         Camera camera = scene.setupCamera(cameraPos, cameraFacing, cameraUpside, fov);
 
