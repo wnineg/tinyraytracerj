@@ -2,7 +2,6 @@ package personal.william.raytracer;
 
 import org.jscience.mathematics.number.Float64;
 import org.jscience.mathematics.vector.Float64Vector;
-import org.jscience.mathematics.vector.Vector;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,16 +21,18 @@ public class RayTracer {
 
         Float64Vector light = Float64Vector.valueOf(0f, 0f, 0f);
         Color bgColor = new Color(0.2f, 0.7f, 0.8f);
-        Material ivory = new Material(new Color(0.4f, 0.4f, 0.3f));
-        Material red = new Material(new Color(0.3f, 0.1f, 0.1f));
+        Material ivory = new Material(0.3f, 0.6f, new Color(0.4f, 0.4f, 0.3f), 50f);
+        Material redRubber = new Material(0.1f, 0.9f, new Color(0.3f, 0.1f, 0.1f), 10f);
 
-        Collection<Light> lights = new ArrayList<>(1);
+        Collection<Light> lights = new ArrayList<>(3);
         lights.add(new Light(Float64Vector.valueOf(-20f, 20f, 20f), 1.5f));
+        lights.add(new Light(Float64Vector.valueOf(30f, 50f, -25f), 1.8f));
+        lights.add(new Light(Float64Vector.valueOf(30f, 20f, 30f), 1.7f));
 
         Collection<VectorSpaceObject> objects = new ArrayList<>(4);
         objects.add(new Sphere(ivory, Float64Vector.valueOf(-3f, 0f, -16f), 2));
-        objects.add(new Sphere(red, Float64Vector.valueOf(-1f, -1.5f, -12f), 2));
-        objects.add(new Sphere(red, Float64Vector.valueOf(1.5f, -0.5f, -18f), 3));
+        objects.add(new Sphere(redRubber, Float64Vector.valueOf(-1f, -1.5f, -12f), 2));
+        objects.add(new Sphere(redRubber, Float64Vector.valueOf(1.5f, -0.5f, -18f), 3));
         objects.add(new Sphere(ivory, Float64Vector.valueOf(7f, 5f, -18f), 4));
 
         for (int i = 0; i < width; ++i) {
@@ -48,42 +49,53 @@ public class RayTracer {
     }
 
     private static Optional<Color> castRay(
-            Vector<Float64> orig, Vector<Float64> dir,
+            Float64Vector orig, Float64Vector dir,
             Collection<Light> lights, Collection<VectorSpaceObject> objects) {
         Optional<RayHit> optHit = intersectScene(orig, dir, objects);
         if (! optHit.isPresent()) return Optional.empty();
 
         RayHit hit = optHit.get();
         float diffuseLightIntensity = 0;
+        float specularLightIntensity = 0;
         for (Light light : lights) {
             Float64Vector lightDir = light.getPosition().minus(hit.getPoint());
             lightDir = lightDir.times(lightDir.norm().inverse());
             diffuseLightIntensity += light.getIntensity() * Math.max(0f, lightDir.times(hit.getNormal()).floatValue());
+            specularLightIntensity +=
+                    calculateSpecularIntensity(
+                            dir.opposite(), lightDir.opposite(), hit.getNormal(), light, hit.getMaterial());
         }
+        float specular = specularLightIntensity * hit.getMaterial().getSpecularAlbedo();
         float[] rgb = hit.getMaterial().getDiffuseColor().getRGBColorComponents(null);
-        float r = rgb[0] * diffuseLightIntensity;
-        float g = rgb[1] * diffuseLightIntensity;
-        float b = rgb[2] * diffuseLightIntensity;
+        float r = rgb[0] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
+        float g = rgb[1] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
+        float b = rgb[2] * diffuseLightIntensity * hit.getMaterial().getDiffuseAlbedo() + specular;
+        float max = Math.max(r, Math.max(g, b));
+        if (max > 1) {
+            r = r / max;
+            g = g / max;
+            b = b / max;
+        }
         return Optional.of(new Color(r, g, b));
     }
 
     private static class RayHit {
 
-        private final Vector<Float64> point;
-        private final Vector<Float64> normal;
+        private final Float64Vector point;
+        private final Float64Vector normal;
         private final Material material;
 
-        public RayHit(Vector<Float64> point, Vector<Float64> normal, Material material) {
+        public RayHit(Float64Vector point, Float64Vector normal, Material material) {
             this.point = point;
             this.normal = normal;
             this.material = material;
         }
 
-        public Vector<Float64> getPoint() {
+        public Float64Vector getPoint() {
             return point;
         }
 
-        public Vector<Float64> getNormal() {
+        public Float64Vector getNormal() {
             return normal;
         }
 
@@ -93,10 +105,10 @@ public class RayTracer {
     }
 
     private static Optional<RayHit> intersectScene(
-            Vector<Float64> orig, Vector<Float64> dir, Collection<VectorSpaceObject> objects) {
+            Float64Vector orig, Float64Vector dir, Collection<VectorSpaceObject> objects) {
         float shortestDist = Float.MAX_VALUE;
-        Vector<Float64> hit = null;
-        Vector<Float64> normal = null;
+        Float64Vector hit = null;
+        Float64Vector normal = null;
         Material material = null;
         for (VectorSpaceObject object : objects) {
             OptionalDouble contactDist = object.calculateRayContactDistance(orig, dir);
@@ -113,6 +125,14 @@ public class RayTracer {
 
         // Ignore the rays which go too far away
         return shortestDist < 1000 ? Optional.of(new RayHit(hit, normal, material)) : Optional.empty();
+    }
+
+    private static float calculateSpecularIntensity(
+            Float64Vector orig, Float64Vector light, Float64Vector normal, Light lightSource, Material material) {
+        Float64Vector reflect = light.minus(normal.times(2.0).times(light.times(normal)));
+        float reflectIntensity = reflect.times(orig).floatValue();
+        if (reflectIntensity <= 0) return 0f;
+        return (float) (lightSource.getIntensity() * Math.pow(reflectIntensity, material.getSpecularExponent()));
     }
 
     private static void displayImage(Color[][] rgbBuffer) {
