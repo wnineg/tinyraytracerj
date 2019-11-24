@@ -175,10 +175,10 @@ public class Scene3d implements Vector3dSpaceScene {
                 }
             }
 
-            private Optional<Color> castRay(Vector3d orig, UnitVector3d ray, final int depth) {
+            private Optional<Color> castRay(Vector3d source, UnitVector3d ray, final int depth) {
                 if (depth > 4) return Optional.empty();
 
-                Optional<SurfacePoint> optSurface = intersectScene(orig, ray);
+                Optional<SurfacePoint> optSurface = intersectScene(source, ray);
                 if (! optSurface.isPresent()) return Optional.empty();
 
                 SurfacePoint surface = optSurface.get();
@@ -189,17 +189,17 @@ public class Scene3d implements Vector3dSpaceScene {
 
                 Optional<UnitVector3d> optRefractDir =
                         refract(ray, surface.getNormal(), surface.getMaterial().getRefractiveIndex());
-                Vector3d reflectOrig =
+                Vector3d reflectSrc =
                         reflectDir.dot(surface.getNormal()) < 0
                                 ? surface.getPoint().minus(surface.getNormal().times(1e-3))
                                 : surface.getPoint().plus(surface.getNormal().times(1e-3));
-                Color reflectColor = castRay(reflectOrig, reflectDir, (depth + 1)).orElse(bgColor);
+                Color reflectColor = castRay(reflectSrc, reflectDir, (depth + 1)).orElse(bgColor);
                 Color refractColor = optRefractDir.flatMap(v -> {
-                            Vector3d refractOrig =
+                            Vector3d refractSrc =
                                     v.dot(surface.getNormal()) < 0
                                             ? surface.getPoint().minus(surface.getNormal().times(1e-3))
                                             : surface.getPoint().plus(surface.getNormal().times(1e-3));
-                            return castRay(refractOrig, v, (depth + 1));
+                            return castRay(refractSrc, v, (depth + 1));
                         })
                         .orElse(bgColor);
 
@@ -214,7 +214,7 @@ public class Scene3d implements Vector3dSpaceScene {
                             lighting.light.getIntensity() * Math.max(0f, lightDir.dot(surface.getNormal()));
                     specularLightIntensity +=
                             calculateSpecularIntensity(
-                                    ray.negate(), lightDir.negate(), surface.getNormal(),
+                                    ray, lightDir, surface.getNormal(),
                                     lighting.light, surface.getMaterial());
                 }
                 return Optional.of(
@@ -223,7 +223,7 @@ public class Scene3d implements Vector3dSpaceScene {
                                 reflectColor, refractColor));
             }
 
-            private Optional<SurfacePoint> intersectScene(Vector3d orig, UnitVector3d dir) {
+            private Optional<SurfacePoint> intersectScene(Vector3d source, UnitVector3d dir) {
                 double shortestDist = Double.MAX_VALUE;
                 SurfacePoint surface = null;
                 for (PositionedObject positionedObject : objectMap.values()) {
@@ -231,28 +231,28 @@ public class Scene3d implements Vector3dSpaceScene {
                     // it is safe here to assume the type of the "PositionedObject.positioning" match.
                     @SuppressWarnings("unchecked")
                     Optional<SurfacePoint> optSurface =
-                            positionedObject.object.cast(positionedObject.positioning, orig, dir);
+                            positionedObject.object.cast(positionedObject.positioning, source, dir);
                     if (! optSurface.isPresent()) continue;
 
                     SurfacePoint objSurface = optSurface.get();
-                    double hitDist = Math.abs(objSurface.getPoint().minus(orig).norm());
+                    double hitDist = Math.abs(objSurface.getPoint().minus(source).norm());
                     if (hitDist >= shortestDist) continue;
 
                     shortestDist = hitDist;
                     surface = objSurface;
                 }
 
-                // Ignore the rays which go too far away
+                // Ignores the rays which go too far away
                 return shortestDist < 1000 ? Optional.ofNullable(surface) : Optional.empty();
             }
 
             private boolean checkPointAtShadow(
                     Vector3d point, UnitVector3d normal, Vector3d lightPos, UnitVector3d lightDir) {
                 double lightDist = lightPos.minus(point).norm();
-                Vector3d shadowOrig = normal.dot(lightDir) < 0
+                Vector3d shadowSrc = normal.dot(lightDir) < 0
                         ? point.minus(normal.times(1e-3)) : point.plus(normal.times(1e-3));
-                Optional<SurfacePoint> optSurface = intersectScene(shadowOrig, lightDir);
-                return optSurface.map(sf -> sf.getPoint().minus(shadowOrig).norm() < lightDist).orElse(Boolean.FALSE);
+                Optional<SurfacePoint> optSurface = intersectScene(shadowSrc, lightDir);
+                return optSurface.map(sf -> sf.getPoint().minus(shadowSrc).norm() < lightDist).orElse(Boolean.FALSE);
             }
 
             private UnitVector3d reflect(UnitVector3d ray, UnitVector3d normal) {
@@ -281,14 +281,12 @@ public class Scene3d implements Vector3dSpaceScene {
             }
 
             private double calculateSpecularIntensity(
-                    Vector3d orig, UnitVector3d light, UnitVector3d normal,
-                    Light lightSource, Material material) {
-                orig = orig.normalize();
-
-                Vector3d reflect = reflect(light, normal);
-                double reflectIntensity = reflect.dot(orig);
+                    UnitVector3d ray, UnitVector3d lightDir, UnitVector3d normal,
+                    Light light, Material material) {
+                Vector3d reflect = reflect(lightDir.negate(), normal);
+                double reflectIntensity = reflect.dot(ray.negate());
                 if (reflectIntensity <= 0) return 0f;
-                return (lightSource.getIntensity() * Math.pow(reflectIntensity, material.getSpecularExponent()));
+                return light.getIntensity() * Math.pow(reflectIntensity, material.getSpecularExponent());
             }
 
             private Color calculateFinalColor(

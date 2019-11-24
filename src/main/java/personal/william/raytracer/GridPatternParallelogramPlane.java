@@ -17,30 +17,29 @@ public class GridPatternParallelogramPlane implements SceneObject<ParallelogramP
     }
 
     @Override
-    public Optional<SurfacePoint> cast(ParallelogramPlanePositioning positioning, Vector3d orig, UnitVector3d ray) {
+    public Optional<SurfacePoint> cast(ParallelogramPlanePositioning positioning, Vector3d source, UnitVector3d ray) {
         Objects.requireNonNull(positioning, "positioning cannot be null.");
-        Objects.requireNonNull(orig, "orig cannot be null.");
+        Objects.requireNonNull(source, "source cannot be null.");
         Objects.requireNonNull(ray, "ray cannot be null.");
 
         UnitVector3d normal = positioning.getDirectionX().cross(positioning.getDirectionY()).normalize();
-        double fluxLen = normal.dot(ray);
-        if (fluxLen == 0) return Optional.empty();
-        if (fluxLen > 0) {
+        double fluxNorm = normal.dot(ray);
+        if (fluxNorm == 0) return Optional.empty();
+        if (fluxNorm > 0) {
             normal = normal.negate();
-            fluxLen = -fluxLen;
+            fluxNorm = -fluxNorm;
         }
 
-        double dist = positioning.getOrigin().minus(orig).dot(normal) / fluxLen;
-        Vector3d hit = orig.plus(ray.times(dist));
+        double dist = positioning.getOrigin().minus(source).dot(normal) / fluxNorm;
+        Vector3d hit = source.plus(ray.times(dist));
 
-        Vector3d origToHit = hit.minus(orig);
-        if (origToHit.dot(ray) <= 0) return Optional.empty();
+        Vector3d srcToHit = hit.minus(source);
+        if (srcToHit.dot(ray) <= 0) return Optional.empty();
 
-        // oh = vector from plane Origin to the Hit point
-        Vector3d oh = hit.minus(positioning.getOrigin());
-        double x = oh.dot(positioning.getDirectionX());
+        Vector3d poh = hit.minus(positioning.getOrigin());
+        double x = poh.dot(positioning.getDirectionX());
         if (x < 0 || x > width) return Optional.empty();
-        double y = oh.dot(positioning.getDirectionY());
+        double y = poh.dot(positioning.getDirectionY());
         if (y < 0 || y > height) return Optional.empty();
 
         int gridIdx0 = (((int) (x / pattern.boxWidth)) % pattern.materialGrid.length);

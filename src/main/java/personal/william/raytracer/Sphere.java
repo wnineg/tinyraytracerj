@@ -35,22 +35,22 @@ public class Sphere implements SceneObject<Sphere.Positioning> {
     }
 
     @Override
-    public Optional<SurfacePoint> cast(Positioning positioning, Vector3d orig, UnitVector3d dir) {
+    public Optional<SurfacePoint> cast(Positioning positioning, Vector3d source, UnitVector3d ray) {
         Vector3d center = positioning.getCenter();
-        Vector3d ray = center.minus(orig);
-        double rayToCenterDist = dir.dot(ray);
-        double centerDistSquare = ray.dot(ray) - (rayToCenterDist * rayToCenterDist);
+        Vector3d sc = center.minus(source);
+        double rayToCenterDist = ray.dot(sc);
+        double centerDistSquare = sc.dot(sc) - (rayToCenterDist * rayToCenterDist);
         double radiusSquare = radius * radius;
-        if (centerDistSquare > (radiusSquare)) return Optional.empty();
+        if (centerDistSquare > radiusSquare) return Optional.empty();
 
         float intersectedDist = (float) Math.sqrt(radiusSquare - centerDistSquare);
         double hitDist = rayToCenterDist - intersectedDist;
         if (hitDist < 0) hitDist = rayToCenterDist + intersectedDist;
         if (hitDist < 0) return Optional.empty();
 
-        Vector3d point = orig.plus(dir.times(hitDist));
-        UnitVector3d normal = point.minus(center).normalize();
-        return Optional.of(new SurfacePoint(this, point, normal, material));
+        Vector3d hit = source.plus(ray.times(hitDist));
+        UnitVector3d normal = hit.minus(center).normalize();
+        return Optional.of(new SurfacePoint(this, hit, normal, material));
     }
 
 }
